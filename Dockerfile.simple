@@ -1,0 +1,41 @@
+FROM python:3.13-alpine
+EXPOSE 8080
+VOLUME /etc/searxng
+
+ARG SEARXNG_GID=977
+ARG SEARXNG_UID=977
+
+RUN addgroup -g ${SEARXNG_GID} searxng && \
+    adduser -u ${SEARXNG_UID} -D -h /usr/local/searxng -s /bin/sh -G searxng searxng
+
+ENV INSTANCE_NAME=searxng \
+    AUTOCOMPLETE= \
+    BASE_URL= \
+    MORTY_KEY= \
+    MORTY_URL= \
+    SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml \
+    UWSGI_SETTINGS_PATH=/etc/searxng/uwsgi.ini \
+    UWSGI_WORKERS=%k \
+    UWSGI_THREADS=4
+
+WORKDIR /usr/local/searxng
+
+RUN apk add brotli tini openssl && rm -rf /root/.cache
+
+COPY requirements.txt ./requirements.txt
+
+RUN apk add --no-cache -t build-dependencies gcc libc-dev linux-headers && pip install --no-cache -r requirements.txt \
+&& apk del build-dependencies \
+&& rm -rf /root/.cache
+
+COPY --chown=searxng:searxng dockerfiles ./dockerfiles
+COPY --chown=searxng:searxng searx ./searx
+
+RUN su searxng -c "/usr/local/bin/python -m compileall -q searx" \
+ && touch -c searx/settings.yml \
+ && touch -c dockerfiles/uwsgi.ini \
+ && find /usr/local/searxng/searx/static -a \( -name '*.html' -o -name '*.css' -o -name '*.js' \
+    -o -name '*.svg' -o -name '*.ttf' -o -name '*.eot' \) \
+    -type f -exec gzip -9 -k {} \+ -exec brotli --best {} \+
+
+ENTRYPOINT ["/sbin/tini","--","/usr/local/searxng/dockerfiles/docker-entrypoint.sh"]
