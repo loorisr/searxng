@@ -1,0 +1,14 @@
+services:      
+  searxng:
+    container_name: searxng
+    build:
+      context: .
+      #dockerfile: Dockerfile #original
+      dockerfile: Dockerfile.simple #my version, simpler
+    ports:
+      - 8080:8080
+    volumes:
+      - ./:/etc/searxng
+    environment:
+      - PUID=1000
+      - PGID=1000
