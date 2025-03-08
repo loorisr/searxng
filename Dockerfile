@@ -15,8 +15,7 @@ ENV INSTANCE_NAME=searxng \
     MORTY_KEY= \
     MORTY_URL= \
     SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml \
-    UWSGI_SETTINGS_PATH=/etc/searxng/uwsgi.ini \
-    UWSGI_WORKERS=%k \
+    UWSGI_WORKERS=2 \
     UWSGI_THREADS=4
 
 WORKDIR /usr/local/searxng
@@ -45,6 +44,7 @@ RUN apk add --no-cache -t build-dependencies \
     uwsgi-python3 \
     brotli \
  && pip3 install --break-system-packages --no-cache -r requirements.txt \
+ && pip3 install --break-system-packages --no-cache gunicorn \
  && apk del build-dependencies \
  && rm -rf /root/.cache
 
@@ -57,7 +57,6 @@ ARG VERSION_GITCOMMIT=unknown
 
 RUN su searxng -c "/usr/bin/python3 -m compileall -q searx" \
  && touch -c --date=@${TIMESTAMP_SETTINGS} searx/settings.yml \
- && touch -c --date=@${TIMESTAMP_UWSGI} dockerfiles/uwsgi.ini \
  && find /usr/local/searxng/searx/static -a \( -name '*.html' -o -name '*.css' -o -name '*.js' \
     -o -name '*.svg' -o -name '*.ttf' -o -name '*.eot' \) \
     -type f -exec gzip -9 -k {} \+ -exec brotli --best {} \+
