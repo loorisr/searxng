@@ -25,7 +25,7 @@ RUN apk add brotli tini openssl libxml2 libxslt mailcap pcre && rm -rf /root/.ca
 
 COPY requirements.txt ./requirements.txt
 
-RUN apk add --no-cache -t build-dependencies gcc libc-dev linux-headers libxml2-dev libxslt-dev pcre-dev  && pip install --no-cache -r requirements.txt \
+RUN apk add --no-cache -t build-dependencies gcc libffi-dev libc-dev linux-headers libxml2-dev libxslt-dev pcre-dev  && pip install --no-cache -r requirements.txt \
 && apk del build-dependencies \
 && rm -rf /root/.cache
 
